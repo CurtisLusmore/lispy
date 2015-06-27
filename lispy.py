@@ -53,27 +53,31 @@ def standard_env():
     env.update({
         '+': op.add, '-': op.sub, '*': op.mul, '/': op.truediv,
         '>': op.gt, '<': op.lt, '>=': op.ge, '<=': op.le, '=': op.eq,
+
         'abs': abs,
-        'append': op.add,
-        'apply': lambda f, a: f(*a),
-        'begin': lambda *x: x[-1],
-        'car': lambda x: x[0],
-        'cdr': lambda x: x[1:],
-        'cons': lambda x, y: [x] + y,
-        'eq?': op.is_,
-        'equal?': op.eq,
-        'length': len,
-        'list': lambda *x: list(x),
-        'list?': lambda x: isinstance(x, List),
-        'map': map,
         'max': max,
         'min': min,
-        'not': op.not_,
+        'round': round,
+
+        'begin': lambda *x: x[-1],
+        'call': lambda f, a: f(*a),
+
+        'head': lambda x: x[0],
+        'tail': lambda x: x[1:],
+        'pair': lambda x, y: [x] + y,
+        'list': lambda *x: list(x),
+        'length': len,
+        'append': op.add,
+        'map': map,
+
+        'eq?': op.is_,
+        'equal?': op.eq,
+        'func?': callable,
+        'list?': lambda x: isinstance(x, List),
         'null?': lambda x: x is [],
         'number?': lambda x: isinstance(x, Number),
-        'procedure?': callable,
-        'round': round,
         'symbol?': lambda x: isinstance(x, Symbol),
+        'not': op.not_,
     })
     return env
 
@@ -92,12 +96,12 @@ def eval(x, env=global_env):
     if op == 'quote':
         return args
 
-    if op == 'if':
+    if op == 'test':
         (cond, branch_t, branch_f) = args
         branch = branch_t if eval(cond, env) else branch_f
         return eval(branch, env)
 
-    if op == 'define':
+    if op == 'name':
         (var, expr) = args
         env[var] = eval(expr, env)
         return
