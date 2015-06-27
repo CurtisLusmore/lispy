@@ -41,7 +41,26 @@ def atom(token):
 Symbol = str
 List = list
 Number = (int, float)
-Env = dict
+
+class Procedure:
+    """A user-defined Scheme procedure."""
+    def __init__(self, parms, body, env):
+        self.parms = parms
+        self.body = body
+        self.env = env
+
+    def __call__(self, *args):
+        return eval(self.body, Env(self.parms, args, self.env))
+
+class Env(dict):
+    """An environment: a dict of {'var': val} pairs, with an outer Env."""
+    def __init__(self, parms=(), args=(), outer=None):
+        self.update(zip(parms, args))
+        self.outer = outer
+
+    def find(self, var):
+        """Find the innermost Env where var appears."""
+        return self if (var in self) else self.outer.find(var)
 
 def standard_env():
     """An environment with some Scheme standard procedures."""
@@ -83,28 +102,37 @@ def standard_env():
 
 global_env = standard_env()
 
-def eval(x, env=global_env):
+def eval(expr, env=global_env):
     """Evaluate an expression in an environment."""
-    if isinstance(x, Symbol):
-        return env[x]
+    if isinstance(expr, Symbol):
+        return env.find(expr)[expr]
 
-    if not isinstance(x, List):
-        return x
+    if not isinstance(expr, List):
+        return expr
 
-    op, *args = x
+    op, *args = expr
 
     if op == 'quote':
         return args
 
-    if op == 'test':
+    if op == 'if':
         (cond, branch_t, branch_f) = args
         branch = branch_t if eval(cond, env) else branch_f
         return eval(branch, env)
 
-    if op == 'name':
+    if op == 'defn':
         (var, expr) = args
         env[var] = eval(expr, env)
         return
+
+    if op == "set!":
+        (var, expr) = args
+        env.find(var)[var] = eval(expr, env)
+        return
+
+    if op == "func":
+        (parms, body) = args
+        return Procedure(parms, body, env)
 
     proc = eval(op, env)
     args = [eval(arg, env) for arg in args]
